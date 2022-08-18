@@ -15,4 +15,5 @@ for jl = 2:ncolors-1
     celllabels{jl} = [num2str(tvalues(jl-1)),' to ',num2str(tvalues(jl))];
 end
 celllabels{ncolors} = ['> ',num2str(tvalues(ncolors-1))];
-hcbar=colorbar('peer',axhandle,'Ticks',cticks,'TickLabels',celllabels);
+%hcbar=colorbar('peer',axhandle,'Ticks',cticks,'TickLabels',celllabels);
+hcbar=colorbar(axhandle,'Ticks',cticks,'TickLabels',celllabels);
