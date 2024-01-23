@@ -17,3 +17,4 @@ end
 celllabels{ncolors} = ['> ',num2str(tvalues(ncolors-1))];
 %hcbar=colorbar('peer',axhandle,'Ticks',cticks,'TickLabels',celllabels);
 hcbar=colorbar(axhandle,'Ticks',cticks,'TickLabels',celllabels);
+%set(hcbar,'TicksMode','Manual','LimitsMode','manual','Limits',[0,1]);

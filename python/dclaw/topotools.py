@@ -27,6 +27,8 @@ Contains:
    changenodata_value
    burnin_nodata
    swapheader
+   merge_topofiles
+   clip_surface
 
 Authors: Dave George and Randy LeVeque
 
@@ -65,7 +67,7 @@ def get_topo(topo_fname, remote_directory, force=None):
     if force is None:
         CTD = os.environ.get('CLAW_TOPO_DOWNLOAD', None)
         force = (CTD in [True, 'True'])
-    print 'force = ',force
+    print('force = ',force)
 
     if os.path.exists(topo_fname):
         print "*** Not downloading topo file (already exists): %s " % topo_fname
@@ -1087,16 +1089,16 @@ def changenodata_value (inputfile,outputfile,topotypein,topotypeout=None,\
     if not topotypeout:
         topotypeout=topotypein
 
-    nrows= shape(Z)[0]
-    ncols= shape(Z)[1]
+    nrows= np.shape(Z)[0]
+    ncols= np.shape(Z)[1]
     npts = nrows*ncols
 
     ind=np.where(Z==nodata_valuein)
     Z[ind]=nodata_valueout
 
 
-    if size(ind)>0:
-        print("Changing %s nodata_value points" % size(ind))
+    if np.size(ind)>0:
+        print("Changing %s nodata_value points" % np.size(ind))
 
     griddata2topofile(X,Y,Z,outputfile,topotypeout,nodata_valuein,nodata_valueout)
 
@@ -1156,14 +1158,16 @@ def burnin_nodata_value (inputfile1,inputfile2,outputfile,topotypein1=3,topotype
 
 #============================================================================================
 def merge_topofiles (X,Y,inputfile1,inputfile2,outputfile,topotypein1=2,topotypein2=2,topotypeout=None,\
-        nodata_valuein=None):
+        nodata_valuein=None,nodata_valueout=None):
 
     """
     create a topo file from 2 others, given preference of files and input parameters specifying output grid
 
     X,Y: gridded arrays for output file, eg. from meshgrid.
     inputfile1: name of primary topo file (the preferred data where it exists)
-    inputfile2: name of secondary topo file (data to be used where primary file has nodata_values, or no values)
+    inputfile2: name of secondary topo file (data to be used where primary file has no values)
+    for (x,y) values outside of inputfile1 and inputfile2, z=nodata_valueout
+    to fill nodata_values in a primary file from a secondary file, see fill_topofile
     outputfile: output topo file
     """
 
@@ -1177,6 +1181,11 @@ def merge_topofiles (X,Y,inputfile1,inputfile2,outputfile,topotypein1=2,topotype
     yl1 = Y1[-1,-1]
     yu1 = Y1[0,0]
 
+    xl2 = X2[0,0]
+    xu2 = X2[-1,-1]
+    yl2 = Y2[-1,-1]
+    yu2 = Y2[0,0]
+
     if topotypein1>1 and not nodata_valuein:
         topoheader=topoheaderread(inputfile1)
         nodata_valuein=topoheader['nodata_value']
@@ -1186,6 +1195,10 @@ def merge_topofiles (X,Y,inputfile1,inputfile2,outputfile,topotypein1=2,topotype
     if not topotypeout:
         topotypeout=topotypein1
 
+    if not nodata_valueout:
+        nodata_valueout = nodata_valuein
+
+    Z = nodata_valueout*Z
     nrows= np.shape(Z)[0]
     ncols= np.shape(Z)[1]
 
@@ -1195,12 +1208,11 @@ def merge_topofiles (X,Y,inputfile1,inputfile2,outputfile,topotypein1=2,topotype
             y = Y[i,j]
 
             if (x>=xl1)&(x<=xu1)&(y>=yl1)&(y<=yu1):
-                z = griddatafindz([(x,y)],X1,Y1,Z1)
-                if (abs(z-nodata_valuein)<1.0):
-                    z = griddatafindz([(x,y)],X2,Y2,Z2)
-                Z[i,j] = z
-            else:
+                Z[i,j] = griddatafindz([(x,y)],X1,Y1,Z1)
+            elif (x>=xl2)&(x<=xu2)&(y>=yl2)&(y<=yu2):
                 Z[i,j] = griddatafindz([(x,y)],X2,Y2,Z2)
+            else:
+                Z[i,j] = nodata_valueout
 
     #import pdb; pdb.set_trace()
 

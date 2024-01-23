@@ -1,20 +1,25 @@
-function Grid=topofile2Grid(fname,topotype,nodata_value)
+function Grid=topofile2Grid(fname,topotype,nodata_value,esri)
 
 % Grid=topofile2Grid(fname,topotype)
-% topofile2Grid takes a file of topotype1,2 or 3, and returns the object Grid, 
+% topofile2Grid takes a file of topotype1,2,3 
+% and returns the object Grid, 
 % containing matrices Grid.Z, Grid.X Grid.Y, 
 % and parameters, Grid.mx, Grid.my, Grid.xlow, Grid.ylow,
 % Grid.dx, Grid.dy, Grid.xend, Grid.yend and Grid.nodata
 %
 % Grid=topofile2Grid(fname,topotype,nodata_value)
 % use nodata_value to specify a nodata_value for the Grid object.
+% if esri==true header columns are flipped
     
+if nargin<4
+    esri=false
+end
 if nargin<3
     nodata_value=[];
 end
 
 if (topotype~=1&topotype~=2&topotype~=3)
-    display(['topofile2Grid ERROR: topotype must be 1,2 or 3'])
+    display(['topofile2Grid ERROR: topotype must be 1-3'])
     return
 end
 
@@ -58,20 +63,28 @@ if (topotype==1)
     clear x y z inddiffx
     
 else
-    Grid.mx=fscanf(fid,'%g',1);      fscanf(fid,'%s',1); 
-    Grid.my=fscanf(fid,'%g',1);      fscanf(fid,'%s',1); 
-    Grid.xlow=fscanf(fid,'%g',1);      fscanf(fid,'%s',1);
-    Grid.ylow=fscanf(fid,'%g',1);      fscanf(fid,'%s',1);
-    Grid.dx=fscanf(fid,'%g',1);      fscanf(fid,'%s',1);
-    Grid.nodata=fscanf(fid,'%g',1);  fscanf(fid,'%s',1);
+    if esri
+        fscanf(fid,'%s',1);Grid.mx=fscanf(fid,'%g',1);       
+        fscanf(fid,'%s',1);Grid.my=fscanf(fid,'%g',1);     
+        fscanf(fid,'%s',1);Grid.xlow=fscanf(fid,'%g',1);     
+        fscanf(fid,'%s',1);Grid.ylow=fscanf(fid,'%g',1);      
+        fscanf(fid,'%s',1);Grid.dx=fscanf(fid,'%g',1);      
+        fscanf(fid,'%s',1);Grid.nodata=fscanf(fid,'%g',1);
+    else
+        Grid.mx=fscanf(fid,'%g',1);      fscanf(fid,'%s',1); 
+        Grid.my=fscanf(fid,'%g',1);      fscanf(fid,'%s',1); 
+        Grid.xlow=fscanf(fid,'%g',1);      fscanf(fid,'%s',1);
+        Grid.ylow=fscanf(fid,'%g',1);      fscanf(fid,'%s',1);
+        Grid.dx=fscanf(fid,'%g',1);      fscanf(fid,'%s',1);
+        Grid.nodata=fscanf(fid,'%g',1);  fscanf(fid,'%s',1);
+    end
     if nargin==3 & ~isempty(nodata_value)
          Grid.nodata=nodata_value;
     end
     
     Grid.dy=Grid.dx;
-
     Grid.Z=fscanf(fid,'%g',[Grid.mx,Grid.my]);
-    
+
     if topotype==2
       Grid.Z=reshape(Grid.Z,Grid.mx,Grid.my);
     end
@@ -81,6 +94,7 @@ else
     [Grid.X,Grid.Y]= meshgrid(linspace(Grid.xlow,Grid.xend,Grid.mx),...%
                            linspace(Grid.ylow,Grid.yend,Grid.my));
     Grid.Y = flipud(Grid.Y);
+
 end
 
 fclose(fid);
